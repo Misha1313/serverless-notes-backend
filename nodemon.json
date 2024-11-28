@@ -1,0 +1,5 @@
+{
+  "watch": ["src", "handler.js"], 
+  "ext": "js,json", 
+  "exec": "serverless offline start"
+}

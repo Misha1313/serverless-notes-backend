@@ -3,6 +3,22 @@ org: mineer
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: serverless-notes-backend
 
+custom:
+  allowedHeaders:
+    - Accept
+    - Content-Type
+    - Content-Length
+    - Authorization
+    - X-Amz-Date
+    - X-Api-Key
+    - X-Amz-Security-Token
+    - X-amz-User-Agent
+    - app_user_id
+    - app_user_name
+plugins:
+  - serverless-offline
+  - serverless-offline-watcher
+
 provider:
   name: aws
   runtime: nodejs20.x
@@ -12,6 +28,68 @@ provider:
   timeout: 5
   environment:
     NOTES_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource: 'arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.NOTES_TABLE}'
+
+functions:
+  add-note:
+    handler: api/add-note.handler
+    description: POST /note
+    events:
+      - httpApi:
+          path: /note
+          method: post
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowedHeaders}
+  update-note:
+    handler: api/update-note.handler
+    description: PATCH /note
+    events:
+      - httpApi:
+          path: /note
+          method: patch
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowedHeaders}
+  get-notes:
+    handler: api/get-notes.handler
+    description: GET /notes
+    events:
+      - httpApi:
+          path: /notes
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowedHeaders}
+
+  get-note:
+    handler: api/get-note.handler
+    description: GET /note/n/${note_id}
+    events:
+      - httpApi:
+          path: /note/n/{note_id}
+          method: get
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowedHeaders}
+
+  delete-note:
+    handler: api/delete-note.handler
+    description: DELETE /note/t/{timestamp}
+    events:
+      - httpApi:
+          path: /note/t/{timestamp}
+          method: delete
+          cors:
+            origin: '*'
+            headers: ${self:custom.allowedHeaders}
+
 
 resources:
   Resources:
@@ -46,12 +124,4 @@ resources:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
 
-
-functions:
-  hello:
-    handler: handler.hello
-    events:
-      - httpApi:
-          path: /
-          method: get
           
